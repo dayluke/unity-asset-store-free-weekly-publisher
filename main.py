@@ -54,19 +54,19 @@ def send_email(asset_name, promo_code):
     """Sends an email with the free asset information."""
     subject = "Unity Publisher of the Week - Free Asset!"
     body = f"""
-    Hi there!
-
-    This week's free asset from the Unity Asset Store is:
-
-    **Asset:** {asset_name}
-    **Promo Code:** {promo_code}
-
-    You can get it here: {URL}
-
-    Enjoy!
+    <html>
+    <body>
+        <p>Hi there!</p>
+        <p>This week's free asset from the Unity Asset Store is:</p>
+        <p><strong>Asset:</strong> {asset_name}</p>
+        <p><strong>Promo Code:</strong> {promo_code}</p>
+        <p>You can get it here: <a href="{URL}">{URL}</a></p>
+        <p>Enjoy!</p>
+    </body>
+    </html>
     """
 
-    msg = MIMEText(body)
+    msg = MIMEText(body, "html")
     msg["Subject"] = subject
     msg["From"] = SENDER_EMAIL
     msg["To"] = RECEIVER_EMAIL

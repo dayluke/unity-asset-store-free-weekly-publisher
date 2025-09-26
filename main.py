@@ -70,21 +70,54 @@ def send_email(asset_name, asset_image, asset_description, asset_url):
     subject = "Unity Publisher of the Week - Free Asset!"
     body = f"""
     <html>
-    <body style="padding-top:1rem;padding-bottom:1rem;padding-right:1rem;padding-left:1rem;" >
-      <div class="expanding-container" style="background-attachment:scroll;position:relative;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding-top:4rem;padding-bottom:4rem;padding-right:4rem;padding-left:4rem;background-color:/cover;background-image:url('{asset_image}');background-repeat:no-repeat;background-position:center center;color:white;border-radius:.75rem;overflow:hidden;" >
-        <div class="vignette-overlay" style="background-attachment:scroll;position:absolute;inset:0;background-color:rgba(0,0,0,0);background-image:none;background-repeat:repeat;background-position:bottom;z-index:0;pointer-events:none;" ></div>
+    <body style="margin:0; padding:1rem; background-color:#ffffff; font-family:Helvetica, Arial, sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; margin:0 auto; border-collapse:collapse;">
+        
+        <!-- Image -->
+        <tr>
+          <td style="padding:0;">
+            <img src="{asset_image}" alt="Asset Image" width="600" style="display:block; width:100%; max-width:600px; height:auto; border-radius:12px 12px 0 0;">
+          </td>
+        </tr>
 
-        <div class="content" style="position:relative;z-index:1;width:60%;padding-left:2rem;" >
-          <h2 class="title" style="font-family:Helvetica, sans-serif;font-size:.875rem;line-height:1.25rem;font-weight:600;text-transform:uppercase;letter-spacing:.18em;margin-bottom:1.25rem;" >Free asset of the week</h2>
-          <h1 class="subtitle" style="font-family:Helvetica, sans-serif;font-size:2.125rem;line-height:2.375rem;font-weight:700;letter-spacing:-.006em;" >{asset_name}</h1>
-          <p class="description" style="font-family:Helvetica, sans-serif;margin-top:1.25rem;font-size:1.125rem;line-height:1.5rem;letter-spacing:-.006em;" >{asset_description}</p>
-        </div>
+        <!-- Content -->
+        <tr>
+          <td bgcolor="#000000" style="padding:32px; color:#ffffff; border-radius:0 0 12px 12px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.18em; padding-bottom:20px;">
+                  Free asset of the week
+                </td>
+              </tr>
+              <tr>
+                <td style="font-size:34px; line-height:38px; font-weight:700; letter-spacing:-0.006em; padding-bottom:20px;">
+                  {asset_name}
+                </td>
+              </tr>
+              <tr>
+                <td style="font-size:18px; line-height:26px; letter-spacing:-0.006em; padding-bottom:30px;">
+                  {asset_description}
+                </td>
+              </tr>
+              <tr>
+                <td align="left">
+                  <a href="{asset_url}" style="display:inline-block; padding:14px 20px; font-size:16px; background-color:#3a5bc7; color:#ffffff; text-decoration:none; border-radius:9999px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">
+                    Get your gift
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-        <div class="button-container" style="position:relative;z-index:1;display:flex;align-items:center;margin-left:auto;padding-left:1rem;" >
-          <a href="{asset_url}" style="text-decoration:none;padding-top:0.9rem;padding-bottom:0.9rem;padding-right:1rem;padding-left:1rem;font-family:Helvetica, sans-serif;font-size:1rem;border-style:none;border-radius:9999px;background-color:rgb(58 91 199);color:white;cursor:pointer;transition:background-color 0.3s ease;text-transform:uppercase;font-weight:600;letter-spacing:.1em;" >Get your gift</a>
-        </div>
-      </div>
-      <p class="lower-text" style="font-family:Helvetica, sans-serif;font-size:.875rem;line-height:1.25rem;margin-top:0.75rem;margin-bottom:0;margin-right:0;margin-left:0;" >* Sale and related free asset promotion end October 2, 2025 at 7:59am PT.</p>
+        <!-- Footer -->
+        <tr>
+          <td style="font-size:14px; color:#555555; padding-top:16px;">
+            * Sale and related free asset promotion end October 2, 2025 at 7:59am PT.
+          </td>
+        </tr>
+        
+      </table>
     </body>
     </html>
     """

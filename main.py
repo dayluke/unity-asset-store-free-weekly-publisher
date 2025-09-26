@@ -218,7 +218,4 @@ def send_email(asset_name, asset_image, asset_description, asset_url):
 
 if __name__ == "__main__":
     name, image, desc, url = scrape_asset_info()
-    if asset and code:
-        send_email(name, image, desc, url)
-    else:
-        print("Could not find the free asset information.")
+    send_email(name, image, desc, url)

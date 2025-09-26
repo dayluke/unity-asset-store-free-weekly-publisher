@@ -70,136 +70,22 @@ def send_email(asset_name, asset_image, asset_description, asset_url):
     subject = "Unity Publisher of the Week - Free Asset!"
     body = f"""
     <html>
-        <head>
-        <style>
-          body {{
-            padding: 1rem;
-          }}
-        
-          .expanding-container {{
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            padding: 4rem;
-            background: url('{asset_image}') no-repeat center center/cover;
-            color: white;
-            border-radius: .75rem;
-            overflow: hidden;
-          }}
-        
-          .vignette-overlay {{
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,1) 100%);
-            z-index: 0;
-            pointer-events: none;
-          }}
-        
-          .content {{
-            position: relative;
-            z-index: 1;
-            width: 60%;
-            padding-left: 2rem;
-          }}
-        
-          .title {{
-            font-family: Helvetica, sans-serif;
-            font-size: .875rem;
-            line-height: 1.25rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: .18em;
-            margin-bottom: 1.25rem;
-          }}
-        
-          .subtitle {{
-            font-family: Helvetica, sans-serif;
-            font-size: 2.125rem;
-            line-height: 2.375rem;
-            font-weight: 700;
-            letter-spacing: -.006em;
-          }}
-        
-          .description {{
-            font-family: Helvetica, sans-serif;
-            margin-top: 1.25rem;
-            font-size: 1.125rem;
-            line-height: 1.5rem;
-            letter-spacing: -.006em;
-          }}
-        
-          .button-container {{
-            position: relative;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            margin-left: auto;
-            padding-left: 1rem;
-          }}
-        
-          .button-container a {{
-            text-decoration: none;
-            padding: 0.9rem 1rem;
-            font-family: Helvetica, sans-serif;
-            font-size: 1rem;
-            border: none;
-            border-radius: 9999px;
-            background-color: rgb(58 91 199);
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: .1em;
-          }}
-        
-          .button-container a:hover {{
-            background-color: rgb(66 104 230);
-          }}
-        
-          .lower-text {{
-            font-family: Helvetica, sans-serif;
-            font-size: .875rem;
-            line-height: 1.25rem;
-            margin: 0.75rem 0 0 0;
-          }}
-        
-          /* Responsive stacking on smaller screens */
-          @media (max-width: 710px) {{
-            .expanding-container {{
-              flex-direction: column;
-              align-items: flex-start;
-            }}
-        
-            .content {{
-              margin: 0 auto;
-              text-align: center;
-            }}
-        
-            .button-container {{
-              margin: 1rem auto;
-            }}
-          }}
-        </style>
-        </head>
-        <body>
-            <div class="expanding-container">
-                <div class="vignette-overlay"></div>
-                
-                <div class="content">
-                    <h2 class="title">Free asset of the week</h2>
-                    <h1 class="subtitle">{asset_name}</h1>
-                    <p class="description">{asset_description}</p>
-                </div>
-                
-                <div class="button-container">
-                    <a href={asset_url}>Get your gift</a>
-                </div>
-            </div>
-            <p class="lower-text">* Sale and related free asset promotion end {expiry_date_formatted}.</p>
-        </body>
+    <body style="padding-top:1rem;padding-bottom:1rem;padding-right:1rem;padding-left:1rem;" >
+      <div class="expanding-container" style="background-attachment:scroll;position:relative;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding-top:4rem;padding-bottom:4rem;padding-right:4rem;padding-left:4rem;background-color:/cover;background-image:url('{asset_image}');background-repeat:no-repeat;background-position:center center;color:white;border-radius:.75rem;overflow:hidden;" >
+        <div class="vignette-overlay" style="background-attachment:scroll;position:absolute;inset:0;background-color:rgba(0,0,0,0);background-image:none;background-repeat:repeat;background-position:bottom;z-index:0;pointer-events:none;" ></div>
+
+        <div class="content" style="position:relative;z-index:1;width:60%;padding-left:2rem;" >
+          <h2 class="title" style="font-family:Helvetica, sans-serif;font-size:.875rem;line-height:1.25rem;font-weight:600;text-transform:uppercase;letter-spacing:.18em;margin-bottom:1.25rem;" >Free asset of the week</h2>
+          <h1 class="subtitle" style="font-family:Helvetica, sans-serif;font-size:2.125rem;line-height:2.375rem;font-weight:700;letter-spacing:-.006em;" >{asset_name}</h1>
+          <p class="description" style="font-family:Helvetica, sans-serif;margin-top:1.25rem;font-size:1.125rem;line-height:1.5rem;letter-spacing:-.006em;" >{asset_description}</p>
+        </div>
+
+        <div class="button-container" style="position:relative;z-index:1;display:flex;align-items:center;margin-left:auto;padding-left:1rem;" >
+          <a href="{asset_url}" style="text-decoration:none;padding-top:0.9rem;padding-bottom:0.9rem;padding-right:1rem;padding-left:1rem;font-family:Helvetica, sans-serif;font-size:1rem;border-style:none;border-radius:9999px;background-color:rgb(58 91 199);color:white;cursor:pointer;transition:background-color 0.3s ease;text-transform:uppercase;font-weight:600;letter-spacing:.1em;" >Get your gift</a>
+        </div>
+      </div>
+      <p class="lower-text" style="font-family:Helvetica, sans-serif;font-size:.875rem;line-height:1.25rem;margin-top:0.75rem;margin-bottom:0;margin-right:0;margin-left:0;" >* Sale and related free asset promotion end October 2, 2025 at 7:59am PT.</p>
+    </body>
     </html>
     """
 

@@ -125,9 +125,19 @@ def send_template_to_contacts(contacts_to_send, params):
 
 def main():
     log.info("Starting the Unity Asset Notifier script...")
-
-    if not all([API_KEY, LIST_ID, SENDER_EMAIL, TEMPLATE_ID]):
-        log.error("Error: Missing one or more required environment variables.")
+    
+    missing_vars = []
+    if not API_KEY:
+        missing_vars.append("API_KEY")
+    if not LIST_ID:
+        missing_vars.append("LIST_ID")
+    if not SENDER_EMAIL:
+        missing_vars.append("SENDER_EMAIL")
+    if not TEMPLATE_ID:
+        missing_vars.append("TEMPLATE_ID")
+    
+    if missing_vars:
+        log.error(f"Error: Missing required environment variables: {', '.join(missing_vars)}")
         sys.exit(2)
     
     asset, image, description, url = scrape_asset_info()

@@ -1,26 +1,28 @@
 import os
-import re
+import sys
+import logging
 import requests
 from bs4 import BeautifulSoup
-import smtplib
-from email.mime.text import MIMEText
 from datetime import datetime, timedelta, time, timezone
 
-# --- Configuration ---
-# URL of the Publisher of the Week page
-URL = "https://assetstore.unity.com/publisher-sale"
 
-# Email Configuration - Get from GitHub Secrets
+# Brevo Configuration - Get from GitHub Secrets
+API_KEY = os.getenv("API_KEY")
+LIST_ID = os.getenv("LIST_ID")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-APP_PASSWORD = os.getenv("APP_PASSWORD")
-RECEIVER_EMAIL = os.getenv("RECEIVER_EMAIL")
+TEMPLATE_ID = os.getenv("TEMPLATE_ID")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+log = logging.getLogger(__name__)
 
 def scrape_asset_info():
     """Scrapes the Unity Asset Store for the free asset of the week using new selectors."""
-    URL = "https://assetstore.unity.com/publisher-sale"
-    
     try:
-        response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
+        url = "https://assetstore.unity.com/publisher-sale"
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
         response.raise_for_status()
         soup = BeautifulSoup(response.content, "html.parser")
 
@@ -42,12 +44,13 @@ def scrape_asset_info():
             
             return asset_name, asset_image, asset_description, asset_url
         else:
-            print("Could not find the free asset section using the specified selector.")
+            log.warning("Could not find the free asset section using the specified selector.")
             return None, None, None, None
             
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching the URL: {e}")
+        log.error(f"Error fetching the URL: {e}")
         return None, None, None, None
+
 
 def next_weekday_at_time(weekday: int, target_time: time, tz=timezone.utc):
     now = datetime.now(tz)
@@ -58,83 +61,108 @@ def next_weekday_at_time(weekday: int, target_time: time, tz=timezone.utc):
     next_day = (now + timedelta(days=days_ahead)).date()
     return datetime.combine(next_day, target_time, tzinfo=tz)
 
+
 def get_expiry_date():
     # Get next Thursday at 15:00 UTC
     next_thursday_3pm_utc = next_weekday_at_time(weekday=3, target_time=time(15, 0))
     # Format it like: October 2, 2025 at 3:00PM UTC
     return next_thursday_3pm_utc.strftime("%B %-d, %Y at %-I:%M%p UTC")
 
-def send_email(asset_name, asset_image, asset_description, asset_url):
-    """Sends an email with the free asset information."""
-    expiry_date_formatted = get_expiry_date()
-    subject = "Unity Publisher of the Week - Free Asset!"
-    body = f"""
-    <html>
-    <body style="margin:0; padding:1rem; background-color:#ffffff; font-family:Helvetica, Arial, sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; margin:0 auto; border-collapse:collapse;">
-        
-        <!-- Image -->
-        <tr>
-          <td style="padding:0;">
-            <img src="{asset_image}" alt="Asset Image" width="600" style="display:block; width:100%; max-width:600px; height:auto; border-radius:12px 12px 0 0;">
-          </td>
-        </tr>
 
-        <!-- Content -->
-        <tr>
-          <td bgcolor="#000000" style="padding:32px; color:#ffffff; border-radius:0 0 12px 12px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="font-size:14px; font-weight:600; text-transform:uppercase; letter-spacing:0.18em; padding-bottom:20px;">
-                  Free asset of the week
-                </td>
-              </tr>
-              <tr>
-                <td style="font-size:34px; line-height:38px; font-weight:700; letter-spacing:-0.006em; padding-bottom:20px;">
-                  {asset_name}
-                </td>
-              </tr>
-              <tr>
-                <td style="font-size:18px; line-height:26px; letter-spacing:-0.006em; padding-bottom:30px;">
-                  {asset_description}
-                </td>
-              </tr>
-              <tr>
-                <td align="left">
-                  <a href="{asset_url}" style="display:inline-block; padding:14px 20px; font-size:16px; background-color:#3a5bc7; color:#ffffff; text-decoration:none; border-radius:9999px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em;">
-                    Get your gift
-                  </a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
+def get_contacts_from_list():
+    """Fetches all contacts from a specific Brevo list."""
+    url = f"https://api.brevo.com/v3/contacts/lists/{LIST_ID}/contacts"
+    headers = {
+        "accept": "application/json",
+        "api-key": API_KEY
+    }
 
-        <!-- Footer -->
-        <tr>
-          <td style="font-size:14px; color:#555555; padding-top:16px;">
-            * Sale and related free asset promotion end October 2, 2025 at 7:59am PT.
-          </td>
-        </tr>
-        
-      </table>
-    </body>
-    </html>
-    """
+    log.info(f"Fetching contacts from list ID {LIST_ID}...")
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
 
-    msg = MIMEText(body, "html")
-    msg["Subject"] = subject
-    msg["From"] = SENDER_EMAIL
-    msg["To"] = RECEIVER_EMAIL
+        contacts = [
+            { "email": contact["email"] }
+            for contact in response.json().get("contacts", [])
+        ]
+
+        log.info(f"Found {len(contacts)} contacts.")
+        return contacts
+
+    except requests.RequestException as e:
+        log.error(f"Error fetching contacts: {e}")
+        return None
+
+
+def send_template_to_contacts(contacts_to_send, params):
+    """Sends a transactional template to a list of contacts."""
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": API_KEY,
+        "content-type": "application/json"
+    }
+
+    payload = {
+        "sender": {"email": SENDER_EMAIL, "name": "Unity Asset Notifier"},
+        "replyTo": {"email": SENDER_EMAIL, "name": "Luke Day"},
+        "bcc": contacts_to_send,
+        "templateId": int(TEMPLATE_ID),
+        "params": params
+    }
+
+    log.info(f"Sending template {TEMPLATE_ID} to {len(contacts_to_send)} contacts...")
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp_server:
-            smtp_server.login(SENDER_EMAIL, APP_PASSWORD)
-            smtp_server.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
-        print("Email sent successfully!")
-    except smtplib.SMTPException as e:
-        print(f"Error sending email: {e}")
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        log.info("Email sent successfully via Brevo transactional API")
+    except requests.exceptions.RequestException as e:
+        log.error(f"An API error occurred while sending: {e}")
+        if e.response:
+            log.error("Error details:", e.response.text)
+
+def main():
+    log.info("Starting the Unity Asset Notifier script...")
+
+    if not all([API_KEY, LIST_ID, SENDER_EMAIL, TEMPLATE_ID]):
+        log.error("Error: Missing one or more required environment variables.")
+        sys.exit(2)
+    
+    asset, image, description, url = scrape_asset_info()
+    if not all ([asset, description, image, url]):
+        log.warning("Could not find asset information. No email will be sent.")
+        sys.exit(3)
+    
+    log.info(f"Found asset: {asset}")
+    
+    subscribers = get_contacts_from_list()
+    if not subscribers:
+        log.warning("No subscribers found. Aborting email send.")
+        sys.exit(4)
+    
+    email_params = {
+        "asset_name": asset,
+        "asset_description": description,
+        "asset_image": image,
+        "asset_url": url,
+        "expiry_date_formatted": get_expiry_date()
+    }
+    
+    try:
+        send_template_to_contacts(subscribers, email_params)
+        sys.exit(0)
+    except Exception as e:
+        log.error(f"Unexpected error while sending email: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    name, image, desc, url = scrape_asset_info()
-    send_email(name, image, desc, url)
+    main()
+
+# Exit code defintions:
+# 0 = success
+# 1 = generic error
+# 2 = missing config
+# 3 = data issue (e.g. asset not found)
+# 4 = no contacts

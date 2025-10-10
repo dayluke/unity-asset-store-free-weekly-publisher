@@ -71,7 +71,7 @@ def get_expiry_date() -> str:
 def update_all_contacts_fields(asset: str, image: str, description: str, url: str):
 	"""Updates all subscribers' asset-related fields, triggering the automation to send the email."""
 	client = Client(api_key=API_KEY)
-	contacts = client.get_all_contacts(list_id=LIST_ID, tag="tester")
+	contacts = client.get_all_contacts(list_id=LIST_ID)
 	fields = {
 		"AssetName": asset,
 		"AssetImage": image,

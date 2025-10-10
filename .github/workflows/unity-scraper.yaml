@@ -1,4 +1,4 @@
-name: Unity Asset Scraper
+name: Unity Asset Notifier
 
 on:
   schedule:
@@ -12,22 +12,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          pip install requests beautifulsoup4 emailoctopus-sdk
 
-      - name: Run the scraper script
+      - name: Run the notifier script
         env:
           API_KEY: ${{ secrets.API_KEY }}
           LIST_ID: ${{ secrets.LIST_ID }}
-          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
-          TEMPLATE_ID: ${{ secrets.TEMPLATE_ID }}
         run: python main.py

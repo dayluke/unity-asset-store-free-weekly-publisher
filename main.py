@@ -132,7 +132,7 @@ def scrape_asset_price(asset_url: str) -> float:
 		if price_element:
 			price_text = price_element.contents[-1].get_text(strip=True)
 			log.info(f"Found price: {price_text}")
-			number = float(price_text.replace("€", ""))
+			number = float(price_text.replace("$", ""))
 			return number
 		else:
 			log.warning("Could not find the price element on the page.")

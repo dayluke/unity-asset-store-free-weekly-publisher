@@ -123,7 +123,9 @@ def scrape_asset_price(asset_url: str) -> float:
 
 	try:
 		log.info(f"Scraping price from: {asset_url}")
-		response = requests.get(asset_url, headers={'User-Agent': 'Mozilla/5.0'})
+		headers = { 'User-Agent': 'Mozilla/5.0' }
+		cookies = { 'AC_CURR': 'USD' }
+		response = requests.get(asset_url, headers=headers, cookies=cookies)
 		response.raise_for_status()
 		soup = BeautifulSoup(response.content, "html.parser")
 		

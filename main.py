@@ -90,7 +90,7 @@ def get_expiry_date() -> str:
 # region: Email Octopus
 
 
-def update_all_contacts_fields(asset: str, image: str, description: str, url: str):
+def update_all_contacts_fields(asset: str, image: str, description: str, url: str) -> int:
 	"""Updates all subscribers' asset-related fields, triggering the automation to send the email."""
 	client = Client(api_key=API_KEY)
 	contacts = client.get_all_contacts(list_id=LIST_ID)
@@ -109,6 +109,8 @@ def update_all_contacts_fields(asset: str, image: str, description: str, url: st
 		failed_count += len(batch['errors'])
 	
 	log.info(f"Success: {success_count}, Failed: {failed_count}")
+
+	return success_count
 
 
 # endregion: Email Octopus
@@ -144,26 +146,33 @@ def scrape_asset_price(asset_url: str) -> float:
 		return 0.0
 
 
-def read_total_savings() -> float:
-	"""Reads the total savings from the JSON file."""
+def read_total_savings() -> tuple[float, int, float]:
+	"""Reads the total savings, number of assets, and cumulative savings from the JSON file."""
 	try:
 		with open(SAVINGS_FILE, 'r') as f:
 			data = json.load(f)
-			return float(data.get("total_savings", 0.0))
+			current_savings = float(data.get("total_savings", 0.0))
+			current_assets = int(data.get("total_assets", 0))
+			current_cumulative_savings = float(data.get("total_cumulative_savings", 0.0))
+			return current_savings, current_assets, current_cumulative_savings
 	except FileNotFoundError:
 		log.warning(f"'{SAVINGS_FILE}' not found. Starting savings from 0.")
-		return 0.0
+		return 0.0, 0, 0.0
 	except (json.JSONDecodeError, TypeError):
 		log.error(f"Could not read or parse '{SAVINGS_FILE}'. Treating savings as 0.")
-		return 0.0
+		return 0.0, 0, 0.0
 
 
-def save_total_savings(new_total: float):
-	"""Saves the new total savings to the JSON file."""
-	data = {"total_savings": round(new_total, 2)}
+def save_total_savings(new_total: float, new_assets: int, new_cumulative_savings: float) -> None:
+	"""Saves the new total savings, number of assets, and cumulative savings to the JSON file."""
+	data = {
+		"total_savings": round(new_total, 2),
+		"total_assets": new_assets,
+		"total_cumulative_savings": round(new_cumulative_savings, 2),
+	}
 	with open(SAVINGS_FILE, 'w') as f:
 		json.dump(data, f, indent=2)
-	log.info(f"Successfully saved new total savings: {data['total_savings']:.2f}")
+	log.info(f"Successfully saved new total savings: {data['total_savings']:.2f}, number of assets: {data['total_assets']}, cumulative savings: {data['total_cumulative_savings']:.2f}")
 
 
 # endregion: Price Scraping
@@ -190,17 +199,20 @@ def main():
 		sys.exit(3)
 	
 	log.info(f"Found asset: {asset}")
-
-	asset_price = scrape_asset_price(url)
-	if asset_price > 0.0:
-		current_savings = read_total_savings()
-		new_savings = current_savings + asset_price
-		save_total_savings(new_savings)
-	else:
-		log.warning("Asset price is 0 or could not be found. Savings will not be updated.")
 	
 	try:
-		update_all_contacts_fields(asset, image, description, url)
+		successful_subscribers = update_all_contacts_fields(asset, image, description, url)
+
+		asset_price = scrape_asset_price(url)
+		if asset_price > 0.0:
+			current_savings, current_assets, current_cumulative_savings = read_total_savings()
+			new_savings = current_savings + asset_price
+			new_assets = current_assets + 1
+			new_cumulative_savings = current_cumulative_savings + (asset_price * successful_subscribers)
+			save_total_savings(new_savings, new_assets, new_cumulative_savings)
+		else:
+			log.warning("Asset price is 0 or could not be found. Savings will not be updated.")
+		
 		sys.exit(0)
 	except Exception as e:
 		log.error(f"Unexpected error while updating fields: {e}")

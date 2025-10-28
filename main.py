@@ -146,7 +146,7 @@ def scrape_asset_price(asset_url: str) -> float:
 		return 0.0
 
 
-def read_total_savings() -> tuple[float, int, float]:
+def read_total_savings() -> tuple[float, int, float, int]:
 	"""Reads the total savings, number of assets, and cumulative savings from the JSON file."""
 	try:
 		with open(SAVINGS_FILE, 'r') as f:
@@ -154,21 +154,23 @@ def read_total_savings() -> tuple[float, int, float]:
 			current_savings = float(data.get("total_savings", 0.0))
 			current_assets = int(data.get("total_assets", 0))
 			current_cumulative_savings = float(data.get("total_cumulative_savings", 0.0))
-			return current_savings, current_assets, current_cumulative_savings
+			current_emails_sent = int(data.get("total_emails_sent", 0))
+			return current_savings, current_assets, current_cumulative_savings, current_emails_sent
 	except FileNotFoundError:
 		log.warning(f"'{SAVINGS_FILE}' not found. Starting savings from 0.")
-		return 0.0, 0, 0.0
+		return 0.0, 0, 0.0, 0
 	except (json.JSONDecodeError, TypeError):
 		log.error(f"Could not read or parse '{SAVINGS_FILE}'. Treating savings as 0.")
-		return 0.0, 0, 0.0
+		return 0.0, 0, 0.0, 0
 
 
-def save_total_savings(new_total: float, new_assets: int, new_cumulative_savings: float) -> None:
-	"""Saves the new total savings, number of assets, and cumulative savings to the JSON file."""
+def save_total_savings(new_total: float, new_assets: int, new_cumulative_savings: float, new_emails_sent: int) -> None:
+	"""Saves the new total savings, number of assets, cumulative savings, and number of emails sent to the JSON file."""
 	data = {
 		"total_savings": round(new_total, 2),
 		"total_assets": new_assets,
 		"total_cumulative_savings": round(new_cumulative_savings, 2),
+		"total_emails_sent": new_emails_sent
 	}
 	with open(SAVINGS_FILE, 'w') as f:
 		json.dump(data, f, indent=2)
@@ -201,15 +203,17 @@ def main():
 	log.info(f"Found asset: {asset}")
 	
 	try:
-		successful_subscribers = update_all_contacts_fields(asset, image, description, url)
+		# successful_subscribers = update_all_contacts_fields(asset, image, description, url)
+		successful_subscribers = 100
 
 		asset_price = scrape_asset_price(url)
 		if asset_price > 0.0:
-			current_savings, current_assets, current_cumulative_savings = read_total_savings()
+			current_savings, current_assets, current_cumulative_savings, current_emails_sent = read_total_savings()
 			new_savings = current_savings + asset_price
 			new_assets = current_assets + 1
 			new_cumulative_savings = current_cumulative_savings + (asset_price * successful_subscribers)
-			save_total_savings(new_savings, new_assets, new_cumulative_savings)
+			new_emails_sent = current_emails_sent + successful_subscribers
+			save_total_savings(new_savings, new_assets, new_cumulative_savings, new_emails_sent)
 		else:
 			log.warning("Asset price is 0 or could not be found. Savings will not be updated.")
 		

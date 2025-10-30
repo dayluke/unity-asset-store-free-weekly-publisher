@@ -203,8 +203,7 @@ def main():
 	log.info(f"Found asset: {asset}")
 	
 	try:
-		# successful_subscribers = update_all_contacts_fields(asset, image, description, url)
-		successful_subscribers = 100
+		successful_subscribers = update_all_contacts_fields(asset, image, description, url)
 
 		asset_price = scrape_asset_price(url)
 		if asset_price > 0.0:

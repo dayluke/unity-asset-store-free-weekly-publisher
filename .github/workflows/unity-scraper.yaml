@@ -2,8 +2,9 @@ name: Unity Asset Notifier
 
 on:
   schedule:
-    # Runs at 3:30PM UTC every Thursday (4:30 PM BST)
-    - cron: '30 15 * * 4'
+    # Runs at 15:30, and 16:30 UTC every Thursday
+    # This covers 7:30/8:30 PT in both summer and winter
+    - cron: '30 15,16 * * 4'
   workflow_dispatch: # Allows you to run it manually from the Actions tab
 
 jobs:
@@ -31,6 +32,7 @@ jobs:
         env:
           API_KEY: ${{ secrets.API_KEY }}
           LIST_ID: ${{ secrets.LIST_ID }}
+          RUN_CONTEXT: ${{ github.event_name }}
         run: python main.py
 
       - name: Commit and push changes

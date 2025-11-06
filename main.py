@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta, time, timezone
 from emailoctopus_sdk import Client
+from zoneinfo import ZoneInfo
 
 
 # EmailOctopus Configuration - Get from GitHub Secrets
@@ -183,6 +184,27 @@ def save_total_savings(new_total: float, new_assets: int, new_cumulative_savings
 
 
 def main():
+	# Check if the script was run manually or by the schedule
+	RUN_CONTEXT = os.getenv("RUN_CONTEXT")
+
+	if RUN_CONTEXT == "schedule":
+		# New Unity assets are released each week at 8:00 AM PT
+		target_hour = 8
+		target_tz = ZoneInfo("America/Los_Angeles")
+		current_pt_time = datetime.now(target_tz)
+		
+		# Check if it's the 8 AM hour. The cron runs at 30 mins past the hour.
+		# This block will only pass when the job runs at 8:30 AM PT.
+		if current_pt_time.hour != target_hour:
+			log.info(f"Not the right time. Current PT: {current_pt_time.strftime('%A %H:%M')}. Exiting.")
+			sys.exit(0) # Exit with success, but do nothing
+			
+		log.info(f"Correct time ({current_pt_time.strftime('%H:%M PT')}) detected. Running script...")
+	elif RUN_CONTEXT == "workflow_dispatch":
+		log.info("Run triggered by 'workflow_dispatch'. Bypassing time check.")
+	else:
+		log.info(f"Run context is '{RUN_CONTEXT}'. Bypassing time check.")
+	
 	log.info("Starting the Unity Asset Notifier script...")
 	
 	missing_vars = []

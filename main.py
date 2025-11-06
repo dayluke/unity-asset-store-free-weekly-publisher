@@ -80,10 +80,13 @@ def next_weekday_at_time(weekday: int, target_time: time, tz=timezone.utc) -> da
 
 
 def get_expiry_date() -> str:
-	# Get next Thursday at 15:00 UTC
-	next_thursday_3pm_utc = next_weekday_at_time(weekday=3, target_time=time(15, 0))
+	# Get next Thursday at 8:00 AM PT
+	pt_tz = ZoneInfo("America/Los_Angeles")
+	next_thursday_8am_pt = next_weekday_at_time(weekday=3, target_time=time(8, 0), tz=pt_tz)
+	# Convert to UTC
+	next_thursday_utc = next_thursday_8am_pt.astimezone(timezone.utc)
 	# Format it like: October 2, 2025 at 3:00PM UTC
-	return next_thursday_3pm_utc.strftime("%B %-d, %Y at %-I:%M%p UTC")
+	return next_thursday_utc.strftime("%B %-d, %Y at %-I:%M%p UTC")
 
 
 # endregion: Unity Asset Store

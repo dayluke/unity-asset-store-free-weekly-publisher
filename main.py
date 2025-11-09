@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import logging
@@ -98,12 +99,13 @@ def update_all_contacts_fields(asset: str, image: str, description: str, url: st
 	"""Updates all subscribers' asset-related fields, triggering the automation to send the email."""
 	client = Client(api_key=API_KEY)
 	contacts = client.get_all_contacts(list_id=LIST_ID)
+	expiry_date = get_expiry_date()
 	fields = {
 		"AssetName": asset,
 		"AssetImage": image,
 		"AssetDescription": description,
 		"AssetURL": url,
-		"AssetExpiry": get_expiry_date()
+		"AssetExpiry": expiry_date
 	}
 
 	success_count = 0
@@ -111,6 +113,12 @@ def update_all_contacts_fields(asset: str, image: str, description: str, url: st
 	for batch in client.update_contacts_in_batches(list_id=LIST_ID, contacts=contacts, fields=fields):
 		success_count += len(batch['success'])
 		failed_count += len(batch['errors'])
+
+	for field in fields:
+		# Format the label with spaces between words
+		label = re.sub(r'([a-z])([A-Z])', r'\1 \2', field)
+		log.info(f"Updating {label}'s fallback value to: {fields[field]}")
+		client.update_list_field(list_id=LIST_ID, tag=field, label=label, fallback=fields[field])
 	
 	log.info(f"Success: {success_count}, Failed: {failed_count}")
 

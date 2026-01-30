@@ -182,11 +182,12 @@ def save_total_savings(new_total: float, new_assets: int, new_cumulative_savings
 		"total_savings": round(new_total, 2),
 		"total_assets": new_assets,
 		"total_cumulative_savings": round(new_cumulative_savings, 2),
-		"total_emails_sent": new_emails_sent
+		"total_emails_sent": new_emails_sent,
+		"last_run_date": datetime.now(tz=ZoneInfo("America/Los_Angeles")).date().isoformat(),
 	}
 	with open(SAVINGS_FILE, 'w') as f:
 		json.dump(data, f, indent=2)
-	log.info(f"Successfully saved new total savings: {data['total_savings']:.2f}, number of assets: {data['total_assets']}, cumulative savings: {data['total_cumulative_savings']:.2f}")
+	log.info(f"Successfully saved new total savings: {data['total_savings']:.2f}, number of assets: {data['total_assets']}, cumulative savings: {data['total_cumulative_savings']:.2f}, emails sent: {data['total_emails_sent']}, last run date: {data['last_run_date']}")
 
 
 # endregion: Price Scraping
@@ -194,20 +195,53 @@ def save_total_savings(new_total: float, new_assets: int, new_cumulative_savings
 # region: Main
 
 
+def should_run_now(now_pt: datetime) -> bool:
+	"""
+	Determines if the script should proceed based on time and previous runs.
+	Returns True if we should send the email, False otherwise.
+	"""
+	# 1. Setup current time in iso format
+	today_str = now_pt.date().isoformat()
+	
+	log.info(f"Current Time (PT): {now_pt.strftime('%Y-%m-%d %H:%M:%S')}")
+
+	# 2. Check that it is Thursday
+	if now_pt.weekday() != 3: 
+		log.info("Today is not Thursday. Exiting.")
+		return False
+
+	# 3. Check that it is after 8:30 AM PT
+	# We use >= 8:30 to prevent the Winter 7:30 AM run from triggering,
+	# but allow delayed jobs (e.g. 9:00 AM) to still work.
+	if now_pt.time() < time(8, 30):
+		log.info("It is too early (before 8:30 AM PT). Exiting.")
+		return False
+
+	# 4. Check that we have not already run today
+	try:
+		with open(SAVINGS_FILE, 'r') as f:
+			data = json.load(f)
+			last_run = data.get("last_run_date")
+	except (FileNotFoundError, json.JSONDecodeError):
+		log.warning(f"Could not read '{SAVINGS_FILE}'. Returning empty data.")
+		last_run = None
+	
+	if last_run and last_run == today_str:
+		log.info(f"Script already ran successfully today ({today_str}). Exiting.")
+		return False
+
+	return True
+
+
 def main():
 	# Check if the script was run manually or by the schedule
 	RUN_CONTEXT = os.getenv("RUN_CONTEXT")
 
 	if RUN_CONTEXT == "schedule":
-		# New Unity assets are released each week at 8:00 AM PT
-		target_hour = 8
 		target_tz = ZoneInfo("America/Los_Angeles")
 		current_pt_time = datetime.now(target_tz)
-		
-		# Check if it's the 8 AM hour. The cron runs at 30 mins past the hour.
-		# This block will only pass when the job runs at 8:30 AM PT.
-		if current_pt_time.hour != target_hour:
-			log.info(f"Not the right time. Current PT: {current_pt_time.strftime('%A %H:%M')}. Exiting.")
+		if not should_run_now(current_pt_time):
+			log.info(f"Not the right time or already ran today. Current PT: {current_pt_time.strftime('%A %H:%M')}. Exiting.")
 			sys.exit(0) # Exit with success, but do nothing
 			
 		log.info(f"Correct time ({current_pt_time.strftime('%H:%M PT')}) detected. Running script...")

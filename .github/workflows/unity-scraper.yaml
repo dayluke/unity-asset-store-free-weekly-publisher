@@ -2,8 +2,8 @@ name: Unity Asset Notifier
 
 on:
   schedule:
-    # Runs at 15:30, and 16:30 UTC every Thursday
-    # This covers 7:30/8:30 PT in both summer and winter
+    # 15:30 UTC = 8:30 AM PDT (Summer) / 7:30 AM PST (Winter)
+    # 16:30 UTC = 9:30 AM PDT (Summer) / 8:30 AM PST (Winter)
     - cron: '30 15,16 * * 4'
   workflow_dispatch: # Allows you to run it manually from the Actions tab
 
